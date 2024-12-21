@@ -1,0 +1,32 @@
+name: infra-iot
+on:
+    workflow_dispatch:
+defaults:
+  run:
+    working-directory: infra/
+jobs:
+    dev:
+        runs-on: ubuntu-latest
+        env: 
+            PRJ_NAME: pragma-css-oit
+            REGION: ${{secrets.REGION}}
+            ACCOUNT_ID: ${{secrets.ACCOUNT_ID}}
+            VPC_ID: ${{secrets.VPC_ID}}
+        steps:
+            - uses: actions/checkout@v3
+            - name: Configure AWS credentials from net account
+              uses: aws-actions/configure-aws-credentials@v1
+              with:
+                aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_SANDBOX }}
+                aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_SANDBOX}}
+                aws-region: ${{secrets.REGION}}
+            - name: Install dependencies and aws cdk
+              run: |
+                npm install -g aws-cdk
+                npm install
+            - name: CDK deploy IoT Stack
+              run: |
+                REGION=${{ secrets.REGION }} \
+                ACCOUNT_ID=${{ secrets.ACCOUNT_ID }} \
+                PRJ_NAME=${{ env.PRJ_NAME }} \
+                cdk deploy --require-approval never
