@@ -23,7 +23,7 @@ jobs:
             - name: Install dependencies and aws cdk
               run: |
                 npm install -g aws-cdk
-                npm install
+                npm install --legacy-peer-deps
             - name: CDK deploy IoT Stack
               run: |
                 REGION=${{ secrets.REGION }} \
