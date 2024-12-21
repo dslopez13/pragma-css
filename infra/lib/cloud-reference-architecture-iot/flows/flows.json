@@ -1,0 +1,263 @@
+{
+  "config": {
+    "kinesisDataStream": {
+      "name": "iot-css",
+      "retentionDays": 1
+    },
+    "secretManagerConfig": {
+      "name": "css-iot-services-credentials",
+      "description": "credentials to css-iot"
+    },
+    "elasticCacheConfig": {
+      "name": "iot-elastic-cluster",
+      "nodeType": "cache.t4g.micro",
+      "numNodes": 1
+    },
+    "iotCoreConfig": {
+      "rulesConfig": [
+        {
+          "name": "iot_kds_rule",
+          "query": "SELECT * from 'iot/css-data'",
+          "actions": [{
+            "type": "kinesis",
+            "name": "iot-css",
+            "kinesisPartitionkey": "${topic()}"
+          }]
+        }
+      ]
+    },
+    "fastdataFlows": [
+      {
+        "name": "fastdata-kds",
+        "bucketDestination": {
+          "name": "dl-css-iot"
+        },
+        "firehoseConfig": {
+            "bucketDestination": {
+              "name": "dl-css-iot"
+            },
+            "kinesisFirehoseConfig": {
+              "s3Prefix": "sensor=!{partitionKeyFromQuery:sensor}/deviceID=!{partitionKeyFromQuery:deviceID}/year=!{timestamp:yyyy}/month=!{timestamp:MM}/day=!{timestamp:dd}/hour=!{timestamp:HH}/",
+              "errorOutputPrefix": "errors/year=!{timestamp:yyyy}/month=!{timestamp:MM}/day=!{timestamp:dd}/hour=!{timestamp:HH}/!{firehose:error-output-type}/",
+              "bufferingHints": {
+                "sizeInMbs": 64,
+                "intervalInSeconds": 300
+              },
+              "dynamicPartition": true,
+              "processingConfiguration": [
+                {
+                  "parameterName": "MetadataExtractionQuery",
+                  "parameterValue": "{sensor: .sensor, deviceID: .deviceID}"
+                },
+                {
+                  "parameterName": "Delimiter",
+                  "parameterValue": "\\n"
+                }
+              ]
+            }
+          },
+        "kinesisDataStreamQueuing": {
+          "type": "lambda2sns2sqs",
+          "lambdaConfig": {
+            "name": "kds-insight-queuing-sns",
+            "codePath": "../../../../../iot/fastdata/fn-kds-queuing/cmd",
+            "lang": "GOLANG",
+            "vpcAccess": false,
+            "triggersConfig": [
+              {
+                "type": "KINESIS",
+                "kinesisTriggerConfig": {
+                  "nameResource": "insights",
+                  "batchSize": 50,
+                  "batchWindows": 60
+                }
+              }
+            ],
+            "env": [
+              {
+                "key": "SNS_QUEUING_SQS_ARN",
+                "value": ""
+              },
+              {
+                "key": "SQS_FIREHOSE_DLQ_URL",
+                "value": ""
+              }
+            ]
+          },
+          "sqsConfig": [
+            {
+              "name": "sqs-alerts",
+              "dlq": true
+            },
+            {
+              "name": "sqs-anomalias",
+              "dlq": true
+            },
+            {
+              "name": "sqs-firehose",
+              "dlq": true
+            }
+          ],
+          "snsConfig": [
+            {
+              "name": "sns-queuing-sqs",
+              "fifo": false,
+              "suscriptions": [
+                {
+                  "type": "SQS",
+                  "name": "sqs-alerts"
+                },
+                {
+                  "type": "SQS",
+                  "name": "sqs-anomalias"
+                },
+                {
+                  "type": "SQS",
+                  "name": "sqs-firehose"
+                }
+              ]
+            }
+          ]
+        },
+        "dequeuingProcessConfig": [
+            {
+              "type": "LAMBDA",
+              "lambdaConfig": {
+                "name": "sqs-dequeuing-alerts",
+                "codePath": "../../../../../iot/fastdata/fn-sqs-dequeuing-alerts/cmd",
+                "lang": "GOLANG",
+                "vpcAccess": true,
+                "env": [
+                  {
+                    "key": "AWS_SECRET_SERVICES_NAME",
+                    "value": "fastdata-services-credential"
+                  },
+                  {
+                    "key": "REDIS_HOST",
+                    "value": ""
+                  },
+                  {
+                    "key": "SQS_ALERTS_DLQ_URL",
+                    "value": ""
+                  }
+                ],
+                "triggersConfig": [
+                  {
+                    "type": "SQS",
+                    "sqsTriggerConfig": {
+                      "nameResource": "sqs-alerts",
+                      "batchSize": 50,
+                      "batchWindows": 60
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "LAMBDA",
+              "lambdaConfig": {
+                "name": "sqs-dequeuing-anomalias",
+                "codePath": "../../../../../iot/fastdata/fn-sqs-dequeuing-anomalias/cmd",
+                "lang": "GOLANG",
+                "vpcAccess": true,
+                "env": [
+                  {
+                    "key": "AWS_SECRET_SERVICES_NAME",
+                    "value": "fastdata-services-credential"
+                  },
+                  {
+                    "key": "SQS_ANOMALIAS_DLQ_URL",
+                    "value": ""
+                  }
+                ],
+                "triggersConfig": [
+                  {
+                    "type": "SQS",
+                    "sqsTriggerConfig": {
+                      "nameResource": "sqs-anomalias",
+                      "batchSize": 50,
+                      "batchWindows": 60
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "LAMBDA",
+              "lambdaConfig": {
+                "name": "sqs-dequeuing-firehose",
+                "codePath": "../../../../../iot/fastdata/fn-sqs-dequeuing-firehose/cmd",
+                "lang": "GOLANG",
+                "vpcAccess": false,
+                "env": [
+                  {
+                    "key": "FIREHOSE_NAME",
+                    "value": ""
+                  }
+                ],
+                "triggersConfig": [
+                  {
+                    "type": "SQS",
+                    "sqsTriggerConfig": {
+                      "nameResource": "sqs-firehose",
+                      "batchSize": 50,
+                      "batchWindows": 60
+                    }
+                  }
+                ]
+              }
+            }
+            
+          ],
+          "onErrorDequeuing": {
+            "type": "LAMBDA",
+            "lambdaConfig": {
+              "name": "on-error-dequeuing",
+              "codePath": "../../../../../iot/fastdata/fn-dequeuing-onerror/cmd",
+              "lang": "GOLANG",
+              "vpcAccess": true,
+              "timeout": 15,
+              "env": [
+                {
+                  "key": "SQS_ALERTS_MAIN_URL",
+                  "value": ""
+                },
+                {
+                  "key": "SQS_ALERTS_DLQ_URL",
+                  "value": ""
+                },
+                {
+                  "key": "SQS_ANOMALIAS_MAIN_URL",
+                  "value": ""
+                },
+                {
+                  "key": "SQS_ANOMALIAS_DLQ_URL",
+                  "value": ""
+                },
+                {
+                  "key": "SQS_FIREHOSE_MAIN_URL",
+                  "value": ""
+                },
+                {
+                  "key": "SQS_FIREHOSE_DLQ_URL",
+                  "value": ""
+                },
+                {
+                  "key": "FIREHOSE_NAME",
+                  "value": ""
+                }
+              ],
+              "triggersConfig": [
+                {
+                  "type": "CRON",
+                  "scheduleTriggerConfig": {
+                    "expressionCron": "cron(0 12 * * ? *)"
+                  }
+                }
+              ]
+            }
+          }
+      }
+    ]
+  }
+}

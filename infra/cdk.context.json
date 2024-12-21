@@ -1,0 +1,78 @@
+{
+  "vpc-provider:account=058264150123:filter.vpc-id=vpc-03c60ea8ccd8090d5:region=us-east-1:returnAsymmetricSubnets=true": {
+    "vpcId": "vpc-03c60ea8ccd8090d5",
+    "vpcCidrBlock": "172.31.0.0/16",
+    "ownerAccountId": "058264150123",
+    "availabilityZones": [],
+    "subnetGroups": [
+      {
+        "name": "Public",
+        "type": "Public",
+        "subnets": [
+          {
+            "subnetId": "subnet-05673a6cb1e92671e",
+            "cidr": "172.31.16.0/20",
+            "availabilityZone": "us-east-1a",
+            "routeTableId": "rtb-09ffeefa477cde2ed"
+          },
+          {
+            "subnetId": "subnet-0db0c8fa9989a22ed",
+            "cidr": "172.31.32.0/20",
+            "availabilityZone": "us-east-1b",
+            "routeTableId": "rtb-09ffeefa477cde2ed"
+          },
+          {
+            "subnetId": "subnet-0f8ffc6728472fa05",
+            "cidr": "172.31.0.0/20",
+            "availabilityZone": "us-east-1c",
+            "routeTableId": "rtb-09ffeefa477cde2ed"
+          },
+          {
+            "subnetId": "subnet-0ead74f94bf182645",
+            "cidr": "172.31.80.0/20",
+            "availabilityZone": "us-east-1d",
+            "routeTableId": "rtb-09ffeefa477cde2ed"
+          },
+          {
+            "subnetId": "subnet-0b77917b6156c5cd5",
+            "cidr": "172.31.48.0/20",
+            "availabilityZone": "us-east-1e",
+            "routeTableId": "rtb-09ffeefa477cde2ed"
+          },
+          {
+            "subnetId": "subnet-0fdf455e545b08449",
+            "cidr": "172.31.64.0/20",
+            "availabilityZone": "us-east-1f",
+            "routeTableId": "rtb-09ffeefa477cde2ed"
+          }
+        ]
+      }
+    ]
+  },
+  "vpc-provider:account=058264150123:filter.vpc-id=vpc-06b9fbdb203e3e0d7:region=us-east-1:returnAsymmetricSubnets=true": {
+    "vpcId": "vpc-06b9fbdb203e3e0d7",
+    "vpcCidrBlock": "10.4.0.0/24",
+    "ownerAccountId": "058264150123",
+    "availabilityZones": [],
+    "subnetGroups": [
+      {
+        "name": "Isolated",
+        "type": "Isolated",
+        "subnets": [
+          {
+            "subnetId": "subnet-0ad411219b8121b0c",
+            "cidr": "10.4.0.0/28",
+            "availabilityZone": "us-east-1a",
+            "routeTableId": "rtb-0a193bd49d8e6bece"
+          },
+          {
+            "subnetId": "subnet-0e8466fe8989bde4a",
+            "cidr": "10.4.0.16/28",
+            "availabilityZone": "us-east-1b",
+            "routeTableId": "rtb-0a193bd49d8e6bece"
+          }
+        ]
+      }
+    ]
+  }
+}
